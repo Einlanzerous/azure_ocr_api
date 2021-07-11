@@ -1,11 +1,6 @@
-import shutil
-import os
+import requests as req
 
-def _save_file_to_server(uploaded_file, path='./uploads/', save_as='default'):
-  extension = os.path.splitext(uploaded_file.filename)[-1]
-  temp_file = os.path.join(path, save_as + extension)
-
-  with open(temp_file, 'wb') as buffer:
-    shutil.copyfileobj(uploaded_file.file, buffer)
-
-  return temp_file
+def call_text_analytics_api(headers, document, endpoint):
+  response = req.post('https://tac-api.cognitiveservices.azure.com/text/analytics/v3.0/' +
+                      endpoint, headers=headers, json=document)
+  return response.json()

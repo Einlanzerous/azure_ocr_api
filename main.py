@@ -1,34 +1,34 @@
 from fastapi import FastAPI, File, UploadFile
 from typing import List
-import time
-import asyncio
-import ocr
 import utils
+import json
+
+with open('secrets/azure.json', 'r') as creds:
+  azure_creds = json.load(creds)
+
+headers = {
+  'Ocp-Apim-Subscription-Key': azure_creds,
+  'Content-Type': 'application/json',
+  'Accept': 'application/json'
+}
 
 app = FastAPI()
 
-@app.get('/')
-def home():
-  return {
-    'message': 'Visit the endpoint: /api/v1/extract_text to perform OCR.'
-  }
+class Model(BaseModel):
+  text_to_analyze: list
 
-@app.post('/api/v1/extract_text')
-async def extract_text(Images: List[UploadFile] = File(...)):
-  response = {}
-  start_time = time.time()
-  tasks = []
+@app.post('/')
+def analyze_text(text: Model):
+  response = {'sentiment': [], 'keyphrase': []}
+  number_of_text = len(text.text_to_analyze)
 
-  for img in Images:
-    print('Images uploaded: ', img.filename)
-    temp_file = utils._save_file_to_server(img, path='./uploads/', save_as=img.filename)
-    tasks.append(asyncio.create_task(ocr.read_image(temp_file)))
+  for index in range(number_of_text):
+    document = {'documents': [{'id': index + 1, 'language': 'en', 'text': text.text_to_analyze[index]}]}
 
-  text = await asyncio.gather(*tasks)
+    sentiment = utils.call_text_analytics_api(headers, document, endpoint='sentiment')
+    keyphrases = utils.call_text_analytics_api(headers, document, endpoint='keyPhrases')
 
-  for item in range(len(text)):
-    response[Images[item].filename] = text[item]
+    response['sentiment'].append(sentiment['documents'][0])
+    response['keyphrases'].append(keyphrases['documents'][0])
   
-  response['Time Taken'] = round((time.time() - start_time), 2)
-
   return response
