@@ -1,16 +1,22 @@
-from fastapi import FastAPI, File, UploadFile
-from typing import List
+from fastapi import FastAPI
+from pydantic import BaseModel
 import utils
 import json
+import os
 
-with open('secrets/azure.json', 'r') as creds:
-  azure_creds = json.load(creds)
+if os.environ.get('creds'):
+  azure_creds = os.getenv('creds')
+else:
+  with open('secrets/azure.json', 'r') as creds:
+    azure_creds = json.load(creds)
 
 headers = {
-  'Ocp-Apim-Subscription-Key': azure_creds,
+  'Ocp-Apim-Subscription-Key': azure_creds.key,
   'Content-Type': 'application/json',
   'Accept': 'application/json'
 }
+
+print(azure_creds)
 
 app = FastAPI()
 
@@ -19,7 +25,7 @@ class Model(BaseModel):
 
 @app.post('/')
 def analyze_text(text: Model):
-  response = {'sentiment': [], 'keyphrase': []}
+  response = {'sentiment': [], 'keyphrases': []}
   number_of_text = len(text.text_to_analyze)
 
   for index in range(number_of_text):
