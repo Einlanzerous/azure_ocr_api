@@ -8,10 +8,10 @@ if os.environ.get('creds'):
   azure_creds = os.getenv('creds')
 else:
   with open('secrets/azure.json', 'r') as creds:
-    azure_creds = json.load(creds)
+    azure_creds = json.load(creds)['key']
 
 headers = {
-  'Ocp-Apim-Subscription-Key': azure_creds.key,
+  'Ocp-Apim-Subscription-Key': azure_creds,
   'Content-Type': 'application/json',
   'Accept': 'application/json'
 }
